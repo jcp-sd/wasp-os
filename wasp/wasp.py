@@ -252,6 +252,7 @@ class Manager():
             if 'background' in dir(self.app):
                 try:
                     self.app.background()
+                    gc.collect()
                 except:
                     # Clear out the old app to ensure we don't recurse when
                     # we switch to to the CrashApp. It's a bit freaky but
