@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: LGPL-3.0-or-later
 # Copyright (C) 2020 Daniel Thompson
+# Copyright (C) 2022 John C Peterson
 
 """HRS3300 driver
 ~~~~~~~~~~~~~~~~~
@@ -26,6 +27,31 @@ _C0DATAL = const(0x0f)
 _RES = const(0x16)
 _HGAIN = const(0x17)
 
+# Wait time between ADC conversions = 0.0 ms, LED drive durrent = 20mA (01b)
+#_ENABLE_INIT = const(0x70)	# HRS disabled, PDRIVE[1] = 0
+#_PDRIVER_INIT = const(0x6e)	# PDRIVE[0] = 1, low nibble = 0xe is used
+#				# by at least two other HRS3300 drivers
+
+# Wait time between ADC conversions = 0.0 ms, LED drive durrent = 30mA (10b)
+#_ENABLE_INIT = const(0x78)	# HRS disabled, PDRIVE[1] = 1
+#_PDRIVER_INIT = const(0x2e)	# PDRIVE[0] = 0, low nibble = 0xe is used
+#				# by at least two other HRS3300 drivers
+
+# Wait time between ADC conversions = 0.0 ms, LED drive durrent = 40mA (11b)
+_ENABLE_INIT = const(0x78)	# HRS disabled, PDRIVE[1] = 1
+_PDRIVER_INIT = const(0x6e)	# PDRIVE[0] = 1, low nibble = 0xe is used
+				# by at least two other HRS3300 drivers
+
+#_RES_INIT = const(0x66)	# HRS in 14-bit mode, and ALS in 14-bit mode
+_RES_INIT = const(0x77)		# HRS in 15-bit mode, and ALS in 15-bit mode
+
+_HGAIN_INIT = const(0x10)	# 64x ADC gain (the datasheet recommended value)
+#_HGAIN_INIT = const(0x0d)	#  8x ADC gain (taken from reference C code)
+#_HGAIN_INIT = const(0x08)	#  4x ADC gain
+#_HGAIN_INIT = const(0x04)	#  2x ADC gain
+#_HGAIN_INIT = const(0x00)	#  1x ADC gain
+
+
 class HRS3300:
     def __init__(self, i2c):
         self._i2c = i2c
@@ -33,20 +59,17 @@ class HRS3300:
     def init(self):
         w = self.write_reg
 
-        # HRS disabled, 12.5 ms wait time between cycles, (partly) 20mA drive
-        w(_ENABLE, 0x60)
+        # ENABLE register (0x01)
+        w(_ENABLE, _ENABLE_INIT)
 
-        # (partly) 20mA drive, power on, "magic" (datasheet says both
-        # "reserved" and "set low nibble to 8" but 0xe gives better results
-        # and is used by at least two other HRS3300 drivers
-        w(_PDRIVER, 0x6e)
+        # HRS LED driver set register (0x0c)
+        w(_PDRIVER, _PDRIVER_INIT)
 
-        # HRS and ALS both in 16-bit mode
-        w(_RES, 0x88)
+        # RESOLUTION register (0x16)
+        w(_RES, _RES_INIT)
 
-        # 64x gain
-        #w(_HGAIN, 0x10)
-        w(_HGAIN, 0x03)
+        # HGAIN register (0x17)
+        w(_HGAIN, _HGAIN_INIT)
 
     def read_reg(self, addr):
         return self._i2c.readfrom_mem(_I2CADDR, addr, 1)[0]
@@ -128,3 +151,4 @@ class HRS3300:
         en = self.read_reg(_ENABLE)
         en = (en & ~_ENABLE_HWT) | (t << 4)
         self.write_reg(_ENABLE, en)
+

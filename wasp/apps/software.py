@@ -45,8 +45,6 @@ class SoftwareApp():
         db.append(('faces', factory('Faces')))
         db.append(('gallery', factory('Gallery')))
         db.append(('musicplayer', factory('Music Player')))
-        db.append(('play2048', factory('Play 2048')))
-        db.append(('snake', factory('Snake Game')))
         db.append(('sports', factory('Sports')))
         db.append(('flashlight', factory('Torch')))
         db.append(('testapp', factory('Test')))
